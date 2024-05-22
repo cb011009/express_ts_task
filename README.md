@@ -1,7 +1,7 @@
 
 # Express App with TypeScript
 
-This project is a Node.js application built using Express.js and TypeScript. It exposes an endpoint, utilizing TypeScript for all coding to ensure maintainability.
+This project is a Node.js application built using Express.js and TypeScript, and it connects to a MongoDB database. It exposes an endpoint, utilizing TypeScript for all coding to ensure maintainability.
 
 ## Installation
 
