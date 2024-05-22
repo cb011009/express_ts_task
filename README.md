@@ -66,7 +66,7 @@ The API supports the following CRUD operations for managing the students collect
   "degree": "Mathematics"
 }
 ```
-## Update an Existing Student at http://localhost:3000/students/<id>
+## Update an Existing Student at http://localhost:3000/students/id
 
 - **Endpoint:** `/students/:id`
 - **HTTP Method:** `PATCH`
@@ -83,7 +83,7 @@ The API supports the following CRUD operations for managing the students collect
 ```
 
   
-## Delete an Existing Student at http://localhost:3000/students/<id>
+## Delete an Existing Student at http://localhost:3000/students/id
 
 - **Endpoint:** `/students/:id`
 - **HTTP Method:** `DELETE`
