@@ -58,7 +58,8 @@ The API supports the following CRUD operations for managing the students collect
 - **Description:** Adds a new student to the database.
 - **Request Body Example:**
 
-  ```bash
+
+```bash
 {
   "name": "Jane Smith",
   "age": 22,
@@ -72,13 +73,16 @@ The API supports the following CRUD operations for managing the students collect
 - **Description:** Updates the details of an existing student specified by the student ID.
 - **Request Body Example:**
 
-  ```bash
+
+```bash
 {
   "name": "Jane Smith",
   "age": 22,
   "degree": "Mathematics"
 }
 ```
+
+  
 ## Delete an Existing Student at http://localhost:3000/students/<id>
 
 - **Endpoint:** `/students/:id`
