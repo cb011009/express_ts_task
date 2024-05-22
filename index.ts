@@ -1,16 +1,99 @@
-import express, {Express, Request,Response} from "express";
-const port =8000;
+import express, { Request, Response, NextFunction } from 'express';
+import { connectToDb, getDb } from './db';
+import { ObjectId } from 'mongodb';
 
 const app = express();
+app.use(express.json());
 
-app.get("/",(req : Request,res : Response)=>{
-    res.send("Node JS +  Express Js + TypeScript ")
+let db: any;
+
+connectToDb((err) => {
+    if (!err) {
+        db = getDb();
+        app.listen(3000, () => {
+            console.log('app listening on port 3000');
+        });
+    } else {
+        console.error('Failed to connect to the database:', err);
+    }
 });
 
-app.get("/end_point_1",(req : Request,res : Response)=>{
-    res.send("This is end point 1. Any user can access via this URL")
+app.use((req: Request, res: Response, next: NextFunction) => {
+    if (!db) {
+        return res.status(503).json({ error: 'Database connection not available' });
+    }
+    next();
 });
 
-app.listen(port,()=>{
-    console.log(`now listening on port ${port}`);
+// Fetch all students -> Tested through Postman
+app.get('/students', async (req: Request, res: Response) => {
+    try {
+        const students = await db.collection('students').find().toArray();
+        res.status(200).json(students);
+    } catch (error) {
+        console.error('Error fetching documents:', error);
+        res.status(500).json({ error: 'Could not fetch the documents' });
+    }
 });
+
+// Fetch a student by ID-> Tested through Postman
+app.get('/students/:id', async (req: Request, res: Response) => {
+    try {
+        const student = await db.collection('students').findOne({ _id: new ObjectId(req.params.id) });
+        if (student) {
+            res.status(200).json(student);
+        } else {
+            res.status(404).json({ error: 'Document not found' });
+        }
+    } catch (error) {
+        console.error('Error fetching document:', error);
+        res.status(500).json({ error: 'Could not fetch the document' });
+    }
+});
+
+// Add a new student -> Tested through Postman
+app.post('/students', async (req: Request, res: Response) => {
+    try {
+        const result = await db.collection('students').insertOne(req.body);
+        res.status(201).json(result);
+    } catch (error) {
+        console.error('Error creating document:', error);
+        res.status(500).json({ error: 'Could not create a new document' });
+    }
+});
+
+// Update a student by ID -> Tested through Postman
+app.patch('/students/:id', async (req: Request, res: Response) => {
+    try {
+        const updates = req.body;
+        const result = await db.collection('students').updateOne({ _id: new ObjectId(req.params.id) }, { $set: updates });
+        if (result.modifiedCount > 0) {
+            res.status(200).json({ message: 'Document updated successfully' });
+        } else {
+            res.status(404).json({ error: 'Document not found' });
+        }
+    } catch (error) {
+        console.error('Error updating document:', error);
+        res.status(500).json({ error: 'Could not update the document' });
+    }
+});
+
+// Delete a student by ID -> Tested through Postman
+app.delete('/students/:id', async (req: Request, res: Response) => {
+    try {
+        const result = await db.collection('students').deleteOne({ _id: new ObjectId(req.params.id) });
+        if (result.deletedCount > 0) {
+            res.status(200).json({ message: 'Document deleted successfully' });
+        } else {
+            res.status(404).json({ error: 'Document not found' });
+        }
+    } catch (error) {
+        console.error('Error deleting document:', error);
+        res.status(500).json({ error: 'Could not delete the document' });
+    }
+});
+
+export default app;
+
+
+
