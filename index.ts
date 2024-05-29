@@ -1,6 +1,11 @@
 import express, { Request, Response, NextFunction } from 'express';
 import { connectToDb, getDb } from './db';
 import { ObjectId } from 'mongodb';
+import dotenv from 'dotenv';
+import {validatePostFieldsMiddleware , validatePatchFieldsMiddleware} from './validation';
+import { authenticate } from './authMiddleware'; 
+
+dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -24,6 +29,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     }
     next();
 });
+
+// Use the authentication middleware
+app.use(authenticate);
 
 // Fetch all students -> Tested through Postman
 app.get('/students', async (req: Request, res: Response) => {
@@ -51,8 +59,8 @@ app.get('/students/:id', async (req: Request, res: Response) => {
     }
 });
 
-// Add a new student -> Tested through Postman
-app.post('/students', async (req: Request, res: Response) => {
+// POST route with field validation middleware
+app.post('/students', validatePostFieldsMiddleware, async (req: Request, res: Response) => {
     try {
         const result = await db.collection('students').insertOne(req.body);
         res.status(201).json(result);
@@ -63,7 +71,7 @@ app.post('/students', async (req: Request, res: Response) => {
 });
 
 // Update a student by ID -> Tested through Postman
-app.patch('/students/:id', async (req: Request, res: Response) => {
+app.patch('/students/:id',  validatePatchFieldsMiddleware, async (req: Request, res: Response) => {
     try {
         const updates = req.body;
         const result = await db.collection('students').updateOne({ _id: new ObjectId(req.params.id) }, { $set: updates });
@@ -78,7 +86,7 @@ app.patch('/students/:id', async (req: Request, res: Response) => {
     }
 });
 
-// Delete a student by ID -> Tested through Postman
+// DELETE route
 app.delete('/students/:id', async (req: Request, res: Response) => {
     try {
         const result = await db.collection('students').deleteOne({ _id: new ObjectId(req.params.id) });
@@ -94,6 +102,5 @@ app.delete('/students/:id', async (req: Request, res: Response) => {
 });
 
 export default app;
-
 
 
