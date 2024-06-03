@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -13,11 +36,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const aws_sdk_1 = __importDefault(require("aws-sdk"));
 const db_1 = require("./db");
 const mongodb_1 = require("mongodb");
 const dotenv_1 = __importDefault(require("dotenv"));
 const validation_1 = require("./validation");
 const authMiddleware_1 = require("./authMiddleware");
+const path = __importStar(require("path"));
+const express_fileupload_1 = __importDefault(require("express-fileupload"));
 dotenv_1.default.config();
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
@@ -112,4 +138,55 @@ app.delete('/students/:id', (req, res) => __awaiter(void 0, void 0, void 0, func
         res.status(500).json({ error: 'Could not delete the document' });
     }
 }));
-exports.default = app;
+//Connect To S3
+const s3 = new aws_sdk_1.default.S3({
+    endpoint: process.env.AWS_ACCESS_ENDPOINT_URL,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    s3BucketEndpoint: true,
+});
+//show form 
+const htmlFilePath = path.join(__dirname, '..', 'form.html');
+app.get("/", (request, response) => {
+    response.sendFile(htmlFilePath);
+});
+//middleware to handle incoming files 
+app.use((0, express_fileupload_1.default)({
+    createParentPath: true
+}));
+//post route handler to upload file
+app.post("/upload", function (request, response) {
+    return __awaiter(this, void 0, void 0, function* () {
+        var _a;
+        const file = (_a = request.files) === null || _a === void 0 ? void 0 : _a.fileToUpload;
+        if (!file) {
+            return response.status(400).send('No file uploaded.');
+        }
+        const { name, mimetype, data } = file;
+        const fileContent = Buffer.from(data.toString(), 'binary');
+        try {
+            yield s3.putObject({
+                Body: fileContent,
+                Bucket: "test_bucket",
+                Key: name,
+            }).promise();
+            response.sendStatus(200);
+        }
+        catch (error) {
+            console.error("Error uploading file to S3:", error);
+            response.sendStatus(500);
+        }
+    });
+});
+//get route handler to list all files
+app.get("/list", function (request, response) {
+    return __awaiter(this, void 0, void 0, function* () {
+        try {
+            const data = yield s3.listObjects({ Bucket: "test_bucket" }).promise();
+            response.json(data.Contents);
+        }
+        catch (err) {
+            response.sendStatus(500);
+        }
+    });
+});
