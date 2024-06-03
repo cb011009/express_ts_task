@@ -1,14 +1,19 @@
 import express, { Request, Response, NextFunction } from 'express';
+import AWS from 'aws-sdk';
 import { connectToDb, getDb } from './db';
 import { ObjectId } from 'mongodb';
 import dotenv from 'dotenv';
 import {validatePostFieldsMiddleware , validatePatchFieldsMiddleware} from './validation';
 import { authenticate } from './authMiddleware'; 
+import * as path from 'path';
+import fileUpload  from 'express-fileupload';
+
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
+
 
 let db: any;
 
@@ -101,6 +106,59 @@ app.delete('/students/:id', async (req: Request, res: Response) => {
     }
 });
 
-export default app;
+//Connect To S3
+const s3 = new AWS.S3({
 
+    endpoint: process.env.AWS_ACCESS_ENDPOINT_URL, 
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    s3BucketEndpoint: true,
+    
+});
 
+//show form 
+const htmlFilePath = path.join(__dirname, '..', 'form.html');
+
+app.get("/", (request, response) => {
+    response.sendFile(htmlFilePath);
+});
+
+//middleware to handle incoming files 
+app.use(fileUpload({
+    createParentPath: true  
+}));
+
+//post route handler to upload file
+
+app.post("/upload", async function(request: Request, response: Response) {
+    const file = request.files?.fileToUpload as fileUpload.UploadedFile | undefined;
+
+    if (!file) {
+        return response.status(400).send('No file uploaded.');
+    }
+
+    const { name, mimetype, data } = file;
+    const fileContent: Buffer = Buffer.from(data.toString(), 'binary');
+
+    try {
+        await s3.putObject({
+            Body: fileContent, 
+            Bucket: "test_bucket",
+            Key: name,
+        }).promise();
+        response.sendStatus(200); 
+    } catch (error) {
+        console.error("Error uploading file to S3:", error);
+        response.sendStatus(500); 
+    }
+});
+
+//get route handler to list all files
+app.get("/list", async function(request: Request, response: Response) {
+    try {
+        const data = await s3.listObjects({ Bucket: "test_bucket" }).promise();
+        response.json(data.Contents);
+    } catch (err) {
+        response.sendStatus(500);
+    }
+});
