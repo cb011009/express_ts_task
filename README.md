@@ -1,7 +1,7 @@
 
-# Express App with TypeScript
+# Express App with TypeScript & MongoDB
 
-This project is a Node.js application built using Express.js and TypeScript, and it connects to a MongoDB database. It exposes an endpoint, utilizing TypeScript for all coding to ensure maintainability.
+This project is a Node.js application built using Express.js and TypeScript, and it connects to a MongoDB database. It exposes an endpoint, utilizing TypeScript for all coding to ensure maintainability. It connects to a MongoDB database and utilizes username and password authentication for all endpoints. The data is validated before it is sent to the database to ensure data integrity and security.
 
 ## Installation
 
@@ -20,6 +20,11 @@ cd express_ts_task
 ```bash
 npm install
 ```
+
+```bash
+npm install dotenv
+```
+
 ## Usage
 
 Development Mode: Run the server in development mode with automatic compilation on file changes, use:
