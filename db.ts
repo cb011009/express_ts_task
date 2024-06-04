@@ -1,12 +1,15 @@
 import { MongoClient, Db } from 'mongodb';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 let dbconnection: Db | undefined;
-const uri: string =
-  'mongodb+srv://dulanmihimansa:test123@cluster0.koobcgz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
+const uri: string  =
+process.env.MONGODB_URI || ''
   
 
 export const connectToDb = (callback: (error?: Error | null) => void) => {
-    MongoClient.connect(uri)
+    MongoClient.connect(uri )
       .then((client) => {
         dbconnection = client.db();
         callback();
